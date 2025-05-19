@@ -7,7 +7,6 @@ const WILDCARD_DOMAINS = [
 const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
-const BOT_USERNAME = 'stupidnotx2_bot'; // Ganti dengan username bot Anda
 
 // Multiple main domains
 const MAIN_DOMAINS = [
@@ -1148,23 +1147,22 @@ function getFlagEmoji(countryCode) {
     return String.fromCodePoint(...[...code].map(c => 127397 + c.charCodeAt()));
 }
 
-// Modifikasi fungsi handleCommand
 async function handleCommand(command, chatId, messageId, isGroup = false) {
-  // Pisahkan command dan username (jika ada)
-  const [baseCommand, username] = command.split('@');
+  // Normalize the command by removing any bot username
+  const normalizedCommand = command.replace(new RegExp(`@${BOT_USERNAME}$`, 'i'), '').trim();
   
-  // Jika di grup dan ada username, pastikan username sesuai dengan bot
-  if (isGroup && username && username.toLowerCase() !== BOT_USERNAME.toLowerCase()) {
-    return; // Abaikan jika username tidak cocok
+  // If in group and command doesn't start with '/', ignore it
+  if (isGroup && !normalizedCommand.startsWith('/')) {
+    return;
   }
 
   const proxyData = await fetchProxyData();
 
-  if (baseCommand === '/start') {
+  if (normalizedCommand === '/start') {
     const countries = [...new Set(proxyData.map(item => item.countryCode))].sort();
     const keyboard = createCountryKeyboard(countries);
     await sendMessage(chatId, 'Pilih negara:', keyboard, messageId);
-  } else if (baseCommand === '/convert') {
+  } else if (normalizedCommand === '/convert') {
     await sendMessage(chatId, 
       '🤖 Stupid World Converter Bot\n\nKirimkan saya link konfigurasi V2Ray dan saya akan mengubahnya ke format Singbox, Nekobox Dan Clash.\n\nContoh:\nvless://...\nvmess://...\ntrojan://...\nss://...\n\nCatatan:\n- Maksimal 10 link per permintaan.\n- Disarankan menggunakan Singbox versi 1.10.3 atau 1.11.8 untuk hasil terbaik.\n\nbaca baik-baik dulu sebelum nanya.',
       null, 
@@ -1548,29 +1546,18 @@ async function handleRequest(request) {
             const update = await request.json();
             
             if (update.message) {
-                const { chat, text, message_id, entities } = update.message;
+                const { chat, text, message_id } = update.message;
                 const isGroup = chat.type !== 'private';
                 
                 if (text && (text.startsWith('/') || text.includes(`@${BOT_USERNAME}`))) {
-                    // Cek apakah pesan benar-benar memanggil bot (untuk grup)
-                    let isBotMentioned = false;
-                    if (entities) {
-                        for (const entity of entities) {
-                            if (entity.type === 'mention' && 
-                                text.substr(entity.offset, entity.length) === `@${BOT_USERNAME}`) {
-                                isBotMentioned = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Jika di grup tapi tidak ada mention bot, abaikan
-                    if (isGroup && !isBotMentioned && text.includes('@')) {
-                        return new Response('OK');
-                    }
-                    
-                    await handleCommand(text, chat.id, message_id, isGroup);
-                } 
+    // Normalize the command - remove bot mention if present
+    let commandText = text;
+    if (isGroup && text.includes(`@${BOT_USERNAME}`)) {
+        commandText = text.split('@')[0].trim();
+    }
+    
+    await handleCommand(commandText, chat.id, message_id, isGroup);
+} 
                 // Handle convert command or direct links
                 else if (text && text.includes('://')) {
                     try {
