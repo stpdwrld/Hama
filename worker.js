@@ -155,18 +155,22 @@ function formatLinkMessage(links) {
 Gunakan salah satu konfigurasi di aplikasi VPN Anda.`;
 }
 
+const ALLOWED_CHAT_ID = -1002619809398; // Pastikan diawali -100 untuk supergroup
+const ALLOWED_THREAD_ID = 22; // Ganti dengan ID thread "Asisten Bot"
+
 async function sendMessage(chatId, text, replyMarkup = null) {
     const url = `${BASE_URL}/sendMessage`;
     const body = {
         chat_id: chatId,
         text: text,
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        message_thread_id: ALLOWED_THREAD_ID // <-- INI YANG PALING PENTING
     };
-    
+
     if (replyMarkup) {
         body.reply_markup = replyMarkup;
     }
-    
+
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -321,63 +325,67 @@ async function handleCallbackQuery(chatId, messageId, data) {
         await handleISPSelection(chatId, messageId, countryCode, isp);
     }
 }
-const ALLOWED_CHAT_ID = -1002619809398; // Format benar untuk supergroup/channel
-const ALLOWED_THREAD_ID = 22; // ID thread tujuan (dari link https://t.me/c/2619809398/22)
 
 async function handleUpdate(update) {
     if (!update) return new Response('OK');
 
+    // Debug: Lihat struktur update
+    console.log("Update Received:", JSON.stringify(update, null, 2));
+
     try {
-        // Handle pesan
         if (update.message) {
             const chatId = update.message.chat.id;
-            const text = update.message.text || '';
-            const messageThreadId = update.message.message_thread_id || 0; // 0 = General
-
-            // Abaikan jika bukan di grup yang dituju
+            const threadId = update.message.message_thread_id || 0;
+            
+            // 1. ABAIKAN jika bukan di grup yang dituju
             if (chatId !== ALLOWED_CHAT_ID) return new Response('OK');
-
-            // Jika di General, beri peringatan
-            if (messageThreadId === 0) {
-                if (text.startsWith('/')) {
+            
+            // 2. JIKA DI GENERAL, BERI PESAN PERINGATAN
+            if (threadId === 0) {
+                if (update.message.text?.startsWith('/')) {
                     await sendMessage(
-                        chatId,
-                        "❌ Gunakan bot hanya di thread ini: [Klik ke thread yang benar](https://t.me/c/2619809398/22)",
-                        null,
-                        ALLOWED_THREAD_ID // Redirect pesan ke thread 22
+                        chatId, 
+                        "⚠️ **Gunakan bot di thread [Asisten Bot](https://t.me/c/2619809398/22)**",
+                        {
+                            inline_keyboard: [[
+                                { 
+                                    text: "Ke Thread Asisten Bot", 
+                                    url: "https://t.me/c/2619809398/22" 
+                                }
+                            ]]
+                        }
                     );
                 }
                 return new Response('OK');
             }
-
-            // Jika di thread lain yang bukan tujuan
-            if (messageThreadId !== ALLOWED_THREAD_ID) {
-                return new Response('OK');
-            }
-
-            // Proses perintah di thread yang benar
-            if (text.startsWith('/start')) {
-                await handleStartCommand(chatId, messageThreadId);
+            
+            // 3. ABAIKAN JIKA BUKAN THREAD YANG DITUJU
+            if (threadId !== ALLOWED_THREAD_ID) return new Response('OK');
+            
+            // 4. PROSES PERINTAH
+            if (update.message.text?.startsWith('/start')) {
+                await handleStartCommand(chatId);
             }
         }
-
-        // Handle callback query (tombol)
+        
+        // Handle callback queries
         else if (update.callback_query) {
             const chatId = update.callback_query.message.chat.id;
-            const messageThreadId = update.callback_query.message.message_thread_id || 0;
-
-            // Blokir callback query di General/thread lain
-            if (chatId !== ALLOWED_CHAT_ID || messageThreadId !== ALLOWED_THREAD_ID) {
+            const threadId = update.callback_query.message.message_thread_id || 0;
+            
+            if (chatId !== ALLOWED_CHAT_ID || threadId !== ALLOWED_THREAD_ID) {
                 return new Response('OK');
             }
-
+            
+            // Proses callback
             const messageId = update.callback_query.message.message_id;
             const data = update.callback_query.data;
             await handleCallbackQuery(chatId, messageId, data);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
     }
+    
     return new Response('OK');
 }
 
