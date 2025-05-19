@@ -1532,6 +1532,28 @@ async function sendDocument(chatId, content, filename, mimeType, replyToMessageI
     return response.json();
 }
 
+// Fungsi untuk memeriksa nama topik
+async function isAsistenBotTopic(chatId, threadId) {
+  // Ganti dengan nama topik yang diinginkan (case insensitive)
+  const ALLOWED_TOPIC_NAMES = ["asisten bot", "bot assistant", "support"]; 
+  
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getForumTopicIconStickers`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    // Jika tidak bisa mendapatkan info topik, default ke ID yang sudah ditentukan
+    if (!data.ok) return threadId === ASISTEN_BOT_TOPIC_ID;
+    
+    // Cek apakah nama topik sesuai
+    const topicInfo = data.result.find(t => t.name.toLowerCase().includes(ALLOWED_TOPIC_NAMES));
+    return topicInfo && topicInfo.id === threadId;
+  } catch (error) {
+    console.error("Error checking topic:", error);
+    return false;
+  }
+}
+
 async function handleRequest(request) {
     if (request.method === 'POST') {
         try {
