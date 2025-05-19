@@ -1,4 +1,4 @@
-const TELEGRAM_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN';
+const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const BASE_URL = 'https://api.telegram.org/bot' + TELEGRAM_TOKEN;
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
 const ALLOWED_TOPIC_NAME = "Asisten Bot";
