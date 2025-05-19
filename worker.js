@@ -4,7 +4,7 @@ const WILDCARD_DOMAINS = [
     'img.email2.vidio.com', 'app.gopay.co.id', 'www.uii.ac.id', 'untar.ac.id'
 ];
 
-const TELEGRAM_TOKEN = '7802960029:AAEU5okvqqCpAhuwdIIi8TaqaI1uMZH1YiY';
+const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
 
