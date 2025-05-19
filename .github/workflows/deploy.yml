@@ -4,34 +4,30 @@ on:
   push:
     branches:
       - main  # Trigger deploy on push to the main branch
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Node.js (Wrangler needs Node)
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'  # Use Node.js version 16 or newer
+          node-version: '16'
 
-      # Step 3: Install Wrangler
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      # Step 4: Install dependencies (if any)
       - name: Install dependencies
         run: npm install
 
-      # Step 5: Deploy to Cloudflare Workers
       - name: Deploy to Cloudflare Workers
         run: |
-          wrangler config --api-token ${{ secrets.CF_API_TOKEN }}   # Authenticate with Cloudflare API Token
-          wrangler publish --env production                          # Deploy worker
+          wrangler config --api-token ${{ secrets.CF_API_TOKEN }}
+          wrangler publish --env production
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
