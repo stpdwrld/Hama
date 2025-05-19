@@ -1147,14 +1147,25 @@ function getFlagEmoji(countryCode) {
     return String.fromCodePoint(...[...code].map(c => 127397 + c.charCodeAt()));
 }
 
+const BOT_USERNAME = 'stupidnotx2_bot'; // Ganti dengan username bot Anda
+
+// Modifikasi fungsi handleCommand
 async function handleCommand(command, chatId, messageId, isGroup = false) {
+  // Pisahkan command dan username (jika ada)
+  const [baseCommand, username] = command.split('@');
+  
+  // Jika di grup dan ada username, pastikan username sesuai dengan bot
+  if (isGroup && username && username.toLowerCase() !== BOT_USERNAME.toLowerCase()) {
+    return; // Abaikan jika username tidak cocok
+  }
+
   const proxyData = await fetchProxyData();
 
-  if (command === '/start') {
+  if (baseCommand === '/start') {
     const countries = [...new Set(proxyData.map(item => item.countryCode))].sort();
     const keyboard = createCountryKeyboard(countries);
     await sendMessage(chatId, 'Pilih negara:', keyboard, messageId);
-  } else if (command === '/convert') {
+  } else if (baseCommand === '/convert') {
     await sendMessage(chatId, 
       '🤖 Stupid World Converter Bot\n\nKirimkan saya link konfigurasi V2Ray dan saya akan mengubahnya ke format Singbox, Nekobox Dan Clash.\n\nContoh:\nvless://...\nvmess://...\ntrojan://...\nss://...\n\nCatatan:\n- Maksimal 10 link per permintaan.\n- Disarankan menggunakan Singbox versi 1.10.3 atau 1.11.8 untuk hasil terbaik.\n\nbaca baik-baik dulu sebelum nanya.',
       null, 
@@ -1538,10 +1549,27 @@ async function handleRequest(request) {
             const update = await request.json();
             
             if (update.message) {
-                const { chat, text, message_id } = update.message;
+                const { chat, text, message_id, entities } = update.message;
                 const isGroup = chat.type !== 'private';
                 
-                if (text && text.startsWith('/')) {
+                if (text && (text.startsWith('/') || text.includes(`@${BOT_USERNAME}`))) {
+                    // Cek apakah pesan benar-benar memanggil bot (untuk grup)
+                    let isBotMentioned = false;
+                    if (entities) {
+                        for (const entity of entities) {
+                            if (entity.type === 'mention' && 
+                                text.substr(entity.offset, entity.length) === `@${BOT_USERNAME}`) {
+                                isBotMentioned = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Jika di grup tapi tidak ada mention bot, abaikan
+                    if (isGroup && !isBotMentioned && text.includes('@')) {
+                        return new Response('OK');
+                    }
+                    
                     await handleCommand(text, chat.id, message_id, isGroup);
                 } 
                 // Handle convert command or direct links
