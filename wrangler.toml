@@ -1,6 +1,10 @@
 name = "telegram-bot"
-type = "javascript"
+main = "worker.js"
+compatibility_date = "2023-05-18"
 
-account_id = "dcb5cb4caca718bf2af93c10267ac007"
+account_id = "dcb5cb4caca718bf2af93c10267ac007"  # Ganti dengan account ID Cloudflare Anda
 workers_dev = true
-compatibility_date = "2025-05-19"
+
+[vars]
+TELEGRAM_TOKEN = "7802960029:AAEU5okvqqCpAhuwdIIi8TaqaI1uMZH1YiY"  # Ganti dengan token bot Telegram Anda
+
