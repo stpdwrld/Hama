@@ -1535,7 +1535,7 @@ async function sendDocument(chatId, content, filename, mimeType, replyToMessageI
 // Fungsi untuk memeriksa nama topik
 async function isAsistenBotTopic(chatId, threadId) {
   // Ganti dengan nama topik yang diinginkan (case insensitive)
-  const ALLOWED_TOPIC_NAMES = ["asisten bot", "bot assistant", "support"]; 
+  const ALLOWED_TOPIC_NAMES = ["Asisten Bot", "bot assistant", "support"]; 
   
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getForumTopicIconStickers`;
