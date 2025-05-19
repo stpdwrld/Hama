@@ -1,6 +1,6 @@
 name = "telegram-bot"
 type = "javascript"
 
-account_id = "YOUR_ACCOUNT_ID"
+account_id = "dcb5cb4caca718bf2af93c10267ac007"
 workers_dev = true
 compatibility_date = "2025-05-19"
