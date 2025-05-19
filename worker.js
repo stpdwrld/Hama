@@ -1,6 +1,7 @@
-const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
+const TELEGRAM_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN';
 const BASE_URL = 'https://api.telegram.org/bot' + TELEGRAM_TOKEN;
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
+const ALLOWED_TOPIC_NAME = "Asisten Bot";
 
 // Domain and wildcard options
 const DOMAINS = [
@@ -155,13 +156,17 @@ function formatLinkMessage(links) {
 Gunakan salah satu konfigurasi di aplikasi VPN Anda.`;
 }
 
-async function sendMessage(chatId, text, replyMarkup = null) {
+async function sendMessage(chatId, text, replyMarkup = null, messageThreadId = null) {
     const url = `${BASE_URL}/sendMessage`;
     const body = {
         chat_id: chatId,
         text: text,
         parse_mode: 'Markdown'
     };
+    
+    if (messageThreadId) {
+        body.message_thread_id = messageThreadId;
+    }
     
     if (replyMarkup) {
         body.reply_markup = replyMarkup;
@@ -322,6 +327,29 @@ async function handleCallbackQuery(chatId, messageId, data) {
     }
 }
 
+async function getForumTopic(chatId, threadId) {
+    if (!threadId) return null;
+    
+    try {
+        const response = await fetch(`${BASE_URL}/getForumTopic`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chat_id: chatId,
+                message_thread_id: threadId
+            })
+        });
+        
+        const result = await response.json();
+        return result.ok ? result.result : null;
+    } catch (error) {
+        console.error('Error getting forum topic:', error);
+        return null;
+    }
+}
+
 async function handleUpdate(update) {
     if (!update) return;
     
@@ -329,6 +357,18 @@ async function handleUpdate(update) {
         if (update.message) {
             const chatId = update.message.chat.id;
             const text = update.message.text || '';
+            const messageThreadId = update.message.message_thread_id || null;
+            
+            // Jika di grup dan bukan di thread yang diizinkan, abaikan
+            if (update.message.chat.type !== 'private') {
+                // Dapatkan informasi thread/topik
+                const topicInfo = await getForumTopic(chatId, messageThreadId);
+                
+                if (!topicInfo || topicInfo.name !== ALLOWED_TOPIC_NAME) {
+                    // Jika bukan di topik yang diizinkan, abaikan pesan
+                    return new Response('OK');
+                }
+            }
             
             if (text.startsWith('/start')) {
                 await handleStartCommand(chatId);
@@ -338,6 +378,17 @@ async function handleUpdate(update) {
             const chatId = update.callback_query.message.chat.id;
             const messageId = update.callback_query.message.message_id;
             const data = update.callback_query.data;
+            const messageThreadId = update.callback_query.message.message_thread_id || null;
+            
+            // Jika di grup dan bukan di thread yang diizinkan, abaikan
+            if (update.callback_query.message.chat.type !== 'private') {
+                const topicInfo = await getForumTopic(chatId, messageThreadId);
+                
+                if (!topicInfo || topicInfo.name !== ALLOWED_TOPIC_NAME) {
+                    // Jika bukan di topik yang diizinkan, abaikan callback
+                    return new Response('OK');
+                }
+            }
             
             await handleCallbackQuery(chatId, messageId, data);
         }
