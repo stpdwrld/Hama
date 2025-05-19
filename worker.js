@@ -7,6 +7,7 @@ const WILDCARD_DOMAINS = [
 const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
+const BOT_USERNAME = 'stupidnotx2_bot'; // Ganti dengan username bot Anda
 
 // Multiple main domains
 const MAIN_DOMAINS = [
@@ -1146,8 +1147,6 @@ function getFlagEmoji(countryCode) {
     // 127397 adalah offset untuk Regional Indicator Symbol
     return String.fromCodePoint(...[...code].map(c => 127397 + c.charCodeAt()));
 }
-
-const BOT_USERNAME = 'stupidnotx2_bot'; // Ganti dengan username bot Anda
 
 // Modifikasi fungsi handleCommand
 async function handleCommand(command, chatId, messageId, isGroup = false) {
