@@ -3,7 +3,7 @@ name: Deploy to Cloudflare Workers
 on:
   push:
     branches:
-      - main
+      - main  # Workflow akan dijalankan pada push ke branch main
 
 jobs:
   deploy:
@@ -16,16 +16,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Menggunakan Node.js versi 20.x
+          node-version: '20'  # Menentukan versi Node.js
 
       - name: Install dependencies
         run: |
-          npm install
+          npm install  # Install dependencies
 
       - name: Run wrangler config
         run: |
-          wrangler config --api-token ${{ secrets.CF_API_TOKEN }}
+          wrangler config --api-token ${{ secrets.CF_API_TOKEN }}  # Menggunakan token API Cloudflare
 
       - name: Deploy to Cloudflare Workers
         run: |
-          wrangler publish
+          wrangler publish  # Deploy aplikasi ke Cloudflare Workers
