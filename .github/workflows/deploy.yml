@@ -1,31 +1,31 @@
-name: Deploy to Cloudflare Workers
+name: Deploy to Cloudflare Worker
 
 on:
   push:
-    branches:
-      - main  # Atau branch yang sesuai
+    branches: [main, master]
+  workflow_dispatch:  # Memungkinkan trigger manual dari UI GitHub
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      deployments: write
+      
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Atau versi Node.js yang sesuai
-
-      - name: Install dependencies
-        run: npm install  # Install dependencies
-
-      - name: Set up Cloudflare API token
-        env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          node-version: '18'
+          
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+        
+      - name: Deploy to Cloudflare
         run: |
-          wrangler config --api-token $CF_API_TOKEN
-
-      - name: Deploy to Cloudflare Workers
-        run: wrangler publish  # Deploy aplikasi ke Cloudflare Workers
+          wrangler deploy --minify
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
