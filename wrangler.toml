@@ -1,5 +1,5 @@
 name = "telegram-bot"
-main = "worker.js"
+main = "index.js"
 compatibility_date = "2023-05-18"
 
 account_id = "dcb5cb4caca718bf2af93c10267ac007"  # Ganti dengan account ID Cloudflare Anda
