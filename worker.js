@@ -1,7 +1,8 @@
 const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const BASE_URL = 'https://api.telegram.org/bot' + TELEGRAM_TOKEN;
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
-const ALLOWED_TOPIC_NAME = "Asisten Bot";
+const ALLOWED_CHAT_ID = -2619809398; // ID grup (negatif untuk grup super)
+const ALLOWED_THREAD_ID = 22; // ID thread/topik
 
 // Domain and wildcard options
 const DOMAINS = [
@@ -164,7 +165,11 @@ async function sendMessage(chatId, text, replyMarkup = null, messageThreadId = n
         parse_mode: 'Markdown'
     };
     
-    if (messageThreadId) {
+    // Jika di grup yang diizinkan, selalu gunakan thread yang ditentukan
+    if (chatId === ALLOWED_CHAT_ID) {
+        body.message_thread_id = ALLOWED_THREAD_ID;
+    } else if (messageThreadId) {
+        // Untuk grup lain (jika ada)
         body.message_thread_id = messageThreadId;
     }
     
@@ -327,29 +332,6 @@ async function handleCallbackQuery(chatId, messageId, data) {
     }
 }
 
-async function getForumTopic(chatId, threadId) {
-    if (!threadId) return null;
-    
-    try {
-        const response = await fetch(`${BASE_URL}/getForumTopic`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                chat_id: chatId,
-                message_thread_id: threadId
-            })
-        });
-        
-        const result = await response.json();
-        return result.ok ? result.result : null;
-    } catch (error) {
-        console.error('Error getting forum topic:', error);
-        return null;
-    }
-}
-
 async function handleUpdate(update) {
     if (!update) return;
     
@@ -359,19 +341,17 @@ async function handleUpdate(update) {
             const text = update.message.text || '';
             const messageThreadId = update.message.message_thread_id || null;
             
-            // Jika di grup dan bukan di thread yang diizinkan, abaikan
-            if (update.message.chat.type !== 'private') {
-                // Dapatkan informasi thread/topik
-                const topicInfo = await getForumTopic(chatId, messageThreadId);
-                
-                if (!topicInfo || topicInfo.name !== ALLOWED_TOPIC_NAME) {
-                    // Jika bukan di topik yang diizinkan, abaikan pesan
-                    return new Response('OK');
+            // Jika di grup yang tidak diizinkan atau thread yang tidak diizinkan
+            if (chatId === ALLOWED_CHAT_ID && messageThreadId !== ALLOWED_THREAD_ID) {
+                // Jika mengirim perintah di luar thread yang diizinkan
+                if (text.startsWith('/')) {
+                    await sendMessage(chatId, "⚠️ Silakan gunakan bot ini hanya di thread yang ditentukan.", null, messageThreadId);
                 }
+                return new Response('OK');
             }
             
             if (text.startsWith('/start')) {
-                await handleStartCommand(chatId);
+                await handleStartCommand(chatId, messageThreadId);
             }
         }
         else if (update.callback_query) {
@@ -380,14 +360,9 @@ async function handleUpdate(update) {
             const data = update.callback_query.data;
             const messageThreadId = update.callback_query.message.message_thread_id || null;
             
-            // Jika di grup dan bukan di thread yang diizinkan, abaikan
-            if (update.callback_query.message.chat.type !== 'private') {
-                const topicInfo = await getForumTopic(chatId, messageThreadId);
-                
-                if (!topicInfo || topicInfo.name !== ALLOWED_TOPIC_NAME) {
-                    // Jika bukan di topik yang diizinkan, abaikan callback
-                    return new Response('OK');
-                }
+            // Jika di grup yang tidak diizinkan atau thread yang tidak diizinkan
+            if (chatId === ALLOWED_CHAT_ID && messageThreadId !== ALLOWED_THREAD_ID) {
+                return new Response('OK');
             }
             
             await handleCallbackQuery(chatId, messageId, data);
