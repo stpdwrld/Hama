@@ -1543,19 +1543,21 @@ async function handleRequest(request) {
             
             if (update.message) {
                 const { chat, text, message_id, message_thread_id } = update.message;
+                const isGroup = chat.type !== 'private';
                 
-                // Cek apakah di grup dan thread yang benar
+                // ✅ Cek apakah di grup & thread yang benar
                 const isAllowedChat = chat.id === ALLOWED_CHAT_ID;
-                const isAllowedThread = message_thread_id === ALLOWED_THREAD_ID;
+                const isAllowedThread = (message_thread_id === ALLOWED_THREAD_ID) || !isGroup;
                 
                 if (!isAllowedChat || !isAllowedThread) {
-                    // Jika di private chat, beri tahu user
-                    if (chat.type === 'private') {
-                        await sendMessage(chat.id, 'Bot ini hanya bisa digunakan di topik tertentu.', null, message_id);
+                    // Jika di private chat, bot tetap merespon
+                    if (!isGroup) {
+                        await handleCommand(text, chat.id, message_id, false);
                     }
-                    return new Response('OK');
+                    return new Response('OK'); // Bot diam di grup/thread lain
                 }
                 
+                // Lanjut pemrosesan pesan
                 if (text && text.startsWith('/')) {
                     await handleCommand(text, chat.id, message_id, isGroup);
                 } 
@@ -1595,10 +1597,13 @@ async function handleRequest(request) {
                 const chatId = message ? message.chat.id : update.callback_query.from.id;
                 const messageId = message ? message.message_id : null;
                 
-                // Jawab callback query terlebih dahulu
-                await answerCallbackQuery(id);
+                // Cek apakah callback berasal dari thread yang benar
+                if (chatId !== ALLOWED_CHAT_ID || (message?.message_thread_id !== ALLOWED_THREAD_ID && message?.chat.type !== 'private')) {
+                    await answerCallbackQuery(id, "❌ Bot hanya aktif di thread tertentu.");
+                    return new Response('OK');
+                }
                 
-                // Handle callback
+                await answerCallbackQuery(id);
                 await handleCallback(update.callback_query, data, chatId, messageId);
             }
             
@@ -1609,10 +1614,7 @@ async function handleRequest(request) {
         }
     }
     
-    // For GET requests, show a simple message
-    return new Response('Telegram Proxy Bot is running', {
-        headers: { 'Content-Type': 'text/plain' }
-    });
+    return new Response('Bot is running');
 }
 
 addEventListener('fetch', event => {
