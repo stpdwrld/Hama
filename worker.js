@@ -1148,23 +1148,17 @@ function getFlagEmoji(countryCode) {
 }
 
 async function handleCommand(command, chatId, messageId, isGroup = false) {
-  // Normalize the command by removing any bot username
-  const normalizedCommand = command.replace(new RegExp(`@${BOT_USERNAME}$`, 'i'), '').trim();
-  
-  // If in group and command doesn't start with '/', ignore it
-  if (isGroup && !normalizedCommand.startsWith('/')) {
-    return;
-  }
-
+  // Normalisasi command - hapus @namabot jika ada
+  const normalizedCmd = command.split('@')[0];
   const proxyData = await fetchProxyData();
 
-  if (normalizedCommand === '/start') {
+  if (normalizedCmd === '/start') {
     const countries = [...new Set(proxyData.map(item => item.countryCode))].sort();
     const keyboard = createCountryKeyboard(countries);
     await sendMessage(chatId, 'Pilih negara:', keyboard, messageId);
-  } else if (normalizedCommand === '/convert') {
+  } else if (normalizedCmd === '/convert') {
     await sendMessage(chatId, 
-      '🤖 Stupid World Converter Bot\n\nKirimkan saya link konfigurasi V2Ray dan saya akan mengubahnya ke format Singbox, Nekobox Dan Clash.\n\nContoh:\nvless://...\nvmess://...\ntrojan://...\nss://...\n\nCatatan:\n- Maksimal 10 link per permintaan.\n- Disarankan menggunakan Singbox versi 1.10.3 atau 1.11.8 untuk hasil terbaik.\n\nbaca baik-baik dulu sebelum nanya.',
+      '🤖 Stupid World Converter Bot\n\nKirimkan saya link konfigurasi V2Ray...',
       null, 
       messageId
     );
@@ -1549,15 +1543,9 @@ async function handleRequest(request) {
                 const { chat, text, message_id } = update.message;
                 const isGroup = chat.type !== 'private';
                 
-                if (text && (text.startsWith('/') || text.includes(`@${BOT_USERNAME}`))) {
-    // Normalize the command - remove bot mention if present
-    let commandText = text;
-    if (isGroup && text.includes(`@${BOT_USERNAME}`)) {
-        commandText = text.split('@')[0].trim();
-    }
-    
-    await handleCommand(commandText, chat.id, message_id, isGroup);
-} 
+                if (text && text.startsWith('/')) {
+                    await handleCommand(text, chat.id, message_id, isGroup);
+                } 
                 // Handle convert command or direct links
                 else if (text && text.includes('://')) {
                     try {
