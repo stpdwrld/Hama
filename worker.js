@@ -1547,12 +1547,12 @@ async function handleRequest(request) {
                 
                 // ✅ Cek apakah di grup & thread yang benar
                 const isAllowedChat = chat.id === ALLOWED_CHAT_ID;
-                const isAllowedThread = (message_thread_id === ALLOWED_THREAD_ID) || !isGroup;
+                const isAllowedThread = (message_thread_id === ALLOWED_THREAD_ID || !isGroup);
                 
                 if (!isAllowedChat || !isAllowedThread) {
                     // Jika di private chat, bot tetap merespon
                     if (!isGroup) {
-                        await handleCommand(text, chat.id, message_id, false);
+                        await handleCommand(text, chat.id, message_id, false); // Respon di private chat
                     }
                     return new Response('OK'); // Bot diam di grup/thread lain
                 }
