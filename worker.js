@@ -3,7 +3,7 @@ const WILDCARD_DOMAINS = [
     'support.zoom.us', 'cache.netflix.com', 'bakrie.ac.id', 'quiz.int.vidio.com', 'quiz.vidio.com', 'investor.fb.com',
     'img.email2.vidio.com', 'app.gopay.co.id', 'www.uii.ac.id', 'untar.ac.id'
 ];
-const ALLOWED_CHAT_ID = -1002619809398; // Ganti dengan chat ID yang diinginkan
+
 const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
@@ -1533,6 +1533,8 @@ async function sendDocument(chatId, content, filename, mimeType, replyToMessageI
 
     return response.json();
 }
+const ALLOWED_CHAT_ID = -1002619809398; // ID grup (harus negatif untuk supergroup)
+const ALLOWED_THREAD_ID = 22; // ID thread/topik
 
 async function handleRequest(request) {
     if (request.method === 'POST') {
@@ -1540,16 +1542,18 @@ async function handleRequest(request) {
             const update = await request.json();
             
             if (update.message) {
-                const { chat, text, message_id } = update.message;
-                const isGroup = chat.type !== 'private';
+                const { chat, text, message_id, message_thread_id } = update.message;
                 
-                // Cek apakah chat ID sesuai dengan yang diizinkan
-                if (chat.id !== ALLOWED_CHAT_ID) {
+                // Cek apakah di grup dan thread yang benar
+                const isAllowedChat = chat.id === ALLOWED_CHAT_ID;
+                const isAllowedThread = message_thread_id === ALLOWED_THREAD_ID;
+                
+                if (!isAllowedChat || !isAllowedThread) {
                     // Jika di private chat, beri tahu user
-                    if (!isGroup) {
-                        await sendMessage(chat.id, 'Maaf, bot ini hanya bisa digunakan di grup tertentu.', null, message_id);
+                    if (chat.type === 'private') {
+                        await sendMessage(chat.id, 'Bot ini hanya bisa digunakan di topik tertentu.', null, message_id);
                     }
-                    return new Response('OK'); // Bot diam di chat lain
+                    return new Response('OK');
                 }
                 
                 if (text && text.startsWith('/')) {
@@ -1561,7 +1565,7 @@ async function handleRequest(request) {
                         const links = text.split('\n').filter(line => line.trim().includes('://'));
                         
                         if (links.length === 0) {
-                            await sendMessage(chat.id, 'Tidak ada link valid yang ditemukan. Kirimkan link VMess, VLESS, Trojan, atau Shadowsocks.', null, message_id);
+                            await sendMessage(chat.id, 'No valid links found. Please send VMess, VLESS, Trojan, or Shadowsocks links.', null, message_id);
                             return new Response('OK');
                         }
 
@@ -1590,12 +1594,6 @@ async function handleRequest(request) {
                 const { data, message, id } = update.callback_query;
                 const chatId = message ? message.chat.id : update.callback_query.from.id;
                 const messageId = message ? message.message_id : null;
-                
-                // Cek apakah callback berasal dari chat yang diizinkan
-                if (chatId !== ALLOWED_CHAT_ID) {
-                    await answerCallbackQuery(id, "❌ Bot tidak aktif di chat ini");
-                    return new Response('OK');
-                }
                 
                 // Jawab callback query terlebih dahulu
                 await answerCallbackQuery(id);
