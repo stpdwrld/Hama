@@ -3,7 +3,7 @@ const WILDCARD_DOMAINS = [
     'support.zoom.us', 'cache.netflix.com', 'bakrie.ac.id', 'quiz.int.vidio.com', 'quiz.vidio.com', 'investor.fb.com',
     'img.email2.vidio.com', 'app.gopay.co.id', 'www.uii.ac.id', 'untar.ac.id'
 ];
-
+const ALLOWED_CHAT_ID = -1002619809398; // Ganti dengan chat ID yang diinginkan
 const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
@@ -1158,7 +1158,7 @@ async function handleCommand(command, chatId, messageId, isGroup = false) {
     await sendMessage(chatId, 'Pilih negara:', keyboard, messageId);
   } else if (normalizedCmd === '/convert') {
     await sendMessage(chatId, 
-      '🤖 Stupid World Converter Bot\n\nKirimkan saya link konfigurasi V2Ray...',
+      '🤖 Stupid World Converter Bot\n\nKirimkan saya link konfigurasi V2Ray dan saya akan mengubahnya ke format Singbox, Nekobox Dan Clash.\n\nContoh:\nvless://...\nvmess://...\ntrojan://...\nss://...\n\nCatatan:\n- Maksimal 10 link per permintaan.\n- Disarankan menggunakan Singbox versi 1.10.3 atau 1.11.8 untuk hasil terbaik.\n\nbaca baik-baik dulu sebelum nanya.',
       null, 
       messageId
     );
@@ -1543,6 +1543,15 @@ async function handleRequest(request) {
                 const { chat, text, message_id } = update.message;
                 const isGroup = chat.type !== 'private';
                 
+                // Cek apakah chat ID sesuai dengan yang diizinkan
+                if (chat.id !== ALLOWED_CHAT_ID) {
+                    // Jika di private chat, beri tahu user
+                    if (!isGroup) {
+                        await sendMessage(chat.id, 'Maaf, bot ini hanya bisa digunakan di grup tertentu.', null, message_id);
+                    }
+                    return new Response('OK'); // Bot diam di chat lain
+                }
+                
                 if (text && text.startsWith('/')) {
                     await handleCommand(text, chat.id, message_id, isGroup);
                 } 
@@ -1552,7 +1561,7 @@ async function handleRequest(request) {
                         const links = text.split('\n').filter(line => line.trim().includes('://'));
                         
                         if (links.length === 0) {
-                            await sendMessage(chat.id, 'No valid links found. Please send VMess, VLESS, Trojan, or Shadowsocks links.', null, message_id);
+                            await sendMessage(chat.id, 'Tidak ada link valid yang ditemukan. Kirimkan link VMess, VLESS, Trojan, atau Shadowsocks.', null, message_id);
                             return new Response('OK');
                         }
 
@@ -1581,6 +1590,12 @@ async function handleRequest(request) {
                 const { data, message, id } = update.callback_query;
                 const chatId = message ? message.chat.id : update.callback_query.from.id;
                 const messageId = message ? message.message_id : null;
+                
+                // Cek apakah callback berasal dari chat yang diizinkan
+                if (chatId !== ALLOWED_CHAT_ID) {
+                    await answerCallbackQuery(id, "❌ Bot tidak aktif di chat ini");
+                    return new Response('OK');
+                }
                 
                 // Jawab callback query terlebih dahulu
                 await answerCallbackQuery(id);
