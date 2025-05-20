@@ -1,2 +1,2 @@
-# TikTok
-TikTok
+# Bot Tele Pribadi Group
+©StupidWorld
