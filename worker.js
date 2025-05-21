@@ -12,6 +12,7 @@ const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
 const MAIN_DOMAINS = [
     'vpn.stupidworld.web.id',
     'world.stupx2.my.id',
+    'wilo.luckystup-id.xyz',
     'vpn.luckystup-id.xyz'
 ];
 
@@ -1446,6 +1447,9 @@ ${configs.vmessNtls}
 \`\`\`
 ${configs.ss}
 \`\`\`
+
+HARAP DIBACA!!!
+domain wilo.luckystup-id.xyz tidak support vmess.
         `;
         
         await sendMessage(chatId, message, null, messageId, true);
