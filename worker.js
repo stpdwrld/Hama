@@ -996,33 +996,45 @@ function generateSingboxConfig(links, isFullConfig = false) {
   return config;
 }
 
-async function fetchProxyData() {
-  const now = Date.now();
-  // Cache for 1 hour (3600000 ms)
-  if (proxyDataCache && now - lastFetchTime < 3600000) {
-    return proxyDataCache;
-  }
+async function fetchProxyData(signal = null) {
+    const now = Date.now();
+    // Cache for 1 hour (3600000 ms)
+    if (proxyDataCache && now - lastFetchTime < 3600000) {
+        return proxyDataCache;
+    }
 
-  try {
-    const response = await fetch(PROXY_DATA_URL);
-    const text = await response.text();
-    const lines = text.trim().split('\n');
-    const data = lines.map(line => {
-      const [ip, port, countryCode, isp] = line.split(',');
-      return {
-        ip,
-        port,
-        countryCode: countryCode.trim(),
-        isp: isp.trim()
-      };
-    });
-    proxyDataCache = data;
-    lastFetchTime = now;
-    return data;
-  } catch (error) {
-    console.error('Error fetching proxy data:', error);
-    return [];
-  }
+    try {
+        const options = signal ? { signal } : {};
+        const response = await fetch(PROXY_DATA_URL, options);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        const lines = text.trim().split('\n');
+        const data = lines.map(line => {
+            const [ip, port, countryCode, isp] = line.split(',');
+            return {
+                ip,
+                port,
+                countryCode: countryCode ? countryCode.trim() : 'N/A',
+                isp: isp ? isp.trim() : 'N/A'
+            };
+        });
+        
+        proxyDataCache = data;
+        lastFetchTime = now;
+        return data;
+    } catch (error) {
+        console.error('Error fetching proxy data:', error);
+        // Return cached data if available, even if stale
+        if (proxyDataCache) {
+            console.log('Using cached proxy data due to fetch error');
+            return proxyDataCache;
+        }
+        throw error;
+    }
 }
 
 async function checkProxyStatus(ip, port) {
@@ -1204,19 +1216,35 @@ async function handleProxyListCommand(chatId, threadId) {
     try {
         const loadingMsg = await sendMessage(chatId, '⏳ Mengambil daftar country code...', null, threadId);
         
-        const proxyData = await fetchProxyData();
+        // Add timeout for the proxy data fetch
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const proxyData = await fetchProxyData(controller.signal);
+        clearTimeout(timeout);
+        
         const countryCodes = extractCountryCodes(proxyData);
 
         if (countryCodes.size === 0) {
-            await editMessage(chatId, loadingMsg.result.message_id, '❌ Tidak ada proxy yang tersedia.', null, threadId);
+            await editMessage(chatId, loadingMsg.result.message_id, 
+                '❌ Tidak ada proxy yang tersedia saat ini. Silakan coba lagi nanti.', 
+                null, threadId);
             return;
         }
 
         const keyboard = createCountryCodeKeyboard(countryCodes);
-        await editMessage(chatId, loadingMsg.result.message_id, '📋 Pilih Country Code:', keyboard, threadId);
+        await editMessage(chatId, loadingMsg.result.message_id, 
+            '📋 Pilih Country Code:', 
+            keyboard, threadId);
     } catch (error) {
         console.error('Error handling /proxylist:', error);
-        await sendMessage(chatId, '❌ Gagal mengambil daftar proxy. Silakan coba lagi nanti.', null, threadId);
+        
+        let errorMessage = '❌ Gagal mengambil daftar proxy. Silakan coba lagi nanti.';
+        if (error.name === 'AbortError') {
+            errorMessage = '⌛ Waktu tunggu habis saat mengambil daftar proxy. Silakan coba lagi.';
+        }
+        
+        await sendMessage(chatId, errorMessage, null, threadId);
     }
 }
 
