@@ -6,7 +6,6 @@ const WILDCARD_DOMAINS = [
 
 const TELEGRAM_TOKEN = '7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw';
 const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/refs/heads/main/allproxy.txt';
-const PROXY_LIST_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel/main/allproxy.txt';
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
 const API_URL = 'https://api2.stupidworld.web.id/check?ip=';
 const MAX_RESULT_SIZE = 900 * 1024; // 900KB to stay under Cloudflare's 1MB limit
@@ -1204,35 +1203,19 @@ async function handleProxyListCommand(chatId, threadId) {
     try {
         const loadingMsg = await sendMessage(chatId, '⏳ Mengambil daftar country code...', null, threadId);
         
-        // Add timeout for the proxy data fetch
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        const proxyData = await fetchProxyData(controller.signal);
-        clearTimeout(timeout);
-        
+        const proxyData = await fetchProxyData();
         const countryCodes = extractCountryCodes(proxyData);
 
         if (countryCodes.size === 0) {
-            await editMessage(chatId, loadingMsg.result.message_id, 
-                '❌ Tidak ada proxy yang tersedia saat ini. Silakan coba lagi nanti.', 
-                null, threadId);
+            await editMessage(chatId, loadingMsg.result.message_id, '❌ Tidak ada proxy yang tersedia.', null, threadId);
             return;
         }
 
         const keyboard = createCountryCodeKeyboard(countryCodes);
-        await editMessage(chatId, loadingMsg.result.message_id, 
-            '📋 Pilih Country Code:', 
-            keyboard, threadId);
+        await editMessage(chatId, loadingMsg.result.message_id, '📋 Pilih Country Code:', keyboard, threadId);
     } catch (error) {
         console.error('Error handling /proxylist:', error);
-        
-        let errorMessage = '❌ Gagal mengambil daftar proxy. Silakan coba lagi nanti.';
-        if (error.name === 'AbortError') {
-            errorMessage = '⌛ Waktu tunggu habis saat mengambil daftar proxy. Silakan coba lagi.';
-        }
-        
-        await sendMessage(chatId, errorMessage, null, threadId);
+        await sendMessage(chatId, '❌ Gagal mengambil daftar proxy. Silakan coba lagi nanti.', null, threadId);
     }
 }
 
