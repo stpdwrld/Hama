@@ -6,5 +6,5 @@ account_id = "dcb5cb4caca718bf2af93c10267ac007"  # Ganti dengan account ID Cloud
 workers_dev = true
 
 [vars]
-TELEGRAM_TOKEN = "7802960029:AAEU5okvqqCpAhuwdIIi8TaqaI1uMZH1YiY"  # Ganti dengan token bot Telegram Anda
+TELEGRAM_TOKEN = "7644792138:AAGRKJmmuFz8axrc85Xm4lXy9BbJ4GNxzzw"  # Ganti dengan token bot Telegram Anda
 
