@@ -11,6 +11,8 @@ const API_URL = 'https://api2.stupidworld.web.id/check?ip=';
 const MAX_RESULT_SIZE = 900 * 1024; // 900KB to stay under Cloudflare's 1MB limit
 const GITHUB_TOKEN = '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';
 const GITHUB_REPO = 'stpdwrld/666';
+const ALLOWED_CHAT_ID = -1002619809398; // ID grup (harus negatif untuk supergroup)
+const ALLOWED_THREAD_ID = 22; // ID thread/topik
 
 // Multiple main domains
 const MAIN_DOMAINS = [
@@ -1826,9 +1828,6 @@ async function handleGitHubResults(request) {
         return new Response('Error processing results', { status: 400 });
     }
 }
-
-const ALLOWED_CHAT_ID = -1002619809398; // ID grup (harus negatif untuk supergroup)
-const ALLOWED_THREAD_ID = 22; // ID thread/topik
 
 async function handleRequest(request) {
     if (request.method === 'POST') {
