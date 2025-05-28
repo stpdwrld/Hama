@@ -996,45 +996,33 @@ function generateSingboxConfig(links, isFullConfig = false) {
   return config;
 }
 
-async function fetchProxyData(signal = null) {
-    const now = Date.now();
-    // Cache for 1 hour (3600000 ms)
-    if (proxyDataCache && now - lastFetchTime < 3600000) {
-        return proxyDataCache;
-    }
+async function fetchProxyData() {
+  const now = Date.now();
+  // Cache for 1 hour (3600000 ms)
+  if (proxyDataCache && now - lastFetchTime < 3600000) {
+    return proxyDataCache;
+  }
 
-    try {
-        const options = signal ? { signal } : {};
-        const response = await fetch(PROXY_DATA_URL, options);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const text = await response.text();
-        const lines = text.trim().split('\n');
-        const data = lines.map(line => {
-            const [ip, port, countryCode, isp] = line.split(',');
-            return {
-                ip,
-                port,
-                countryCode: countryCode ? countryCode.trim() : 'N/A',
-                isp: isp ? isp.trim() : 'N/A'
-            };
-        });
-        
-        proxyDataCache = data;
-        lastFetchTime = now;
-        return data;
-    } catch (error) {
-        console.error('Error fetching proxy data:', error);
-        // Return cached data if available, even if stale
-        if (proxyDataCache) {
-            console.log('Using cached proxy data due to fetch error');
-            return proxyDataCache;
-        }
-        throw error;
-    }
+  try {
+    const response = await fetch(PROXY_DATA_URL);
+    const text = await response.text();
+    const lines = text.trim().split('\n');
+    const data = lines.map(line => {
+      const [ip, port, countryCode, isp] = line.split(',');
+      return {
+        ip,
+        port,
+        countryCode: countryCode.trim(),
+        isp: isp.trim()
+      };
+    });
+    proxyDataCache = data;
+    lastFetchTime = now;
+    return data;
+  } catch (error) {
+    console.error('Error fetching proxy data:', error);
+    return [];
+  }
 }
 
 async function checkProxyStatus(ip, port) {
