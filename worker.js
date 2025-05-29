@@ -24,7 +24,7 @@ let proxyDataCache = null;
 let lastFetchTime = 0;
 
 // Items per page for pagination
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 // Fungsi untuk decode base64 di lingkungan CF Workers
 function decodeBase64(str) {
