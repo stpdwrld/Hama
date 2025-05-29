@@ -9,7 +9,7 @@ const PROXY_DATA_URL = 'https://raw.githubusercontent.com/stpdwrld/Stupid-Tunnel
 const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
 const API_URL = 'https://api2.stupidworld.web.id/check?ip=';
 const MAX_RESULT_SIZE = 900 * 1024; // 900KB to stay under Cloudflare's 1MB limit
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = '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';
 const GITHUB_REPO = 'stpdwrld/666';
 
 // Multiple main domains
