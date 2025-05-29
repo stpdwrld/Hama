@@ -1224,29 +1224,24 @@ async function checkProxy(ip, port) {
 }
 
 // Proxy List Functions
-async function handleProxyListCommand(chatId, messageId) {
-  try {
-    const loadingMsg = await sendMessage(chatId, '⏳ Mengambil daftar country code...');
-    
-    const proxyData = await fetchProxyData();
-    const countryCodes = [...new Set(proxyData.map(item => item.countryCode))].sort();
+async function handleProxyListCommand(chatId, threadId) {
+    try {
+        const loadingMsg = await sendMessage(chatId, '⏳ Mengambil daftar country code...', null, threadId);
+        
+        const proxyData = await fetchProxyData();
+        const countryCodes = extractCountryCodes(proxyData);
 
-    if (countryCodes.length === 0) {
-      await editMessage(chatId, loadingMsg.result.message_id, 
-        '❌ Tidak ada proxy yang tersedia atau format data tidak valid.');
-      return;
+        if (countryCodes.size === 0) {
+            await editMessage(chatId, loadingMsg.result.message_id, '❌ Tidak ada proxy yang tersedia.', null, threadId);
+            return;
+        }
+
+        const keyboard = createCountryCodeKeyboard(countryCodes);
+        await editMessage(chatId, loadingMsg.result.message_id, '📋 Pilih Country Code:', keyboard, threadId);
+    } catch (error) {
+        console.error('Error handling /proxylist:', error);
+        await sendMessage(chatId, '❌ Gagal mengambil daftar proxy. Silakan coba lagi nanti.', null, threadId);
     }
-
-    const keyboard = createCountryCodeKeyboard(countryCodes);
-    await editMessage(chatId, loadingMsg.result.message_id, '📋 Pilih Country Code:', keyboard);
-  } catch (error) {
-    console.error('Error handling /proxylist:', error);
-    await sendMessage(chatId, 
-      `❌ Gagal mengambil daftar proxy. Error: ${error.message}\nSilakan coba lagi nanti atau hubungi admin.`,
-      null,
-      messageId
-    );
-  }
 }
 
 // Helper functions for proxy list
