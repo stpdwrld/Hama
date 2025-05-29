@@ -2,7 +2,7 @@ name = "telegram-bot"
 main = "worker.js"
 compatibility_date = "2023-05-18"
 
-account_id = "dcb5cb4caca718bf2af93c10267ac007"  # Ganti dengan account ID Cloudflare Anda
+account_id = "dc6c48cef8178de1a131e82097bf55bb"  # Ganti dengan account ID Cloudflare Anda
 workers_dev = true
 
 [vars]
