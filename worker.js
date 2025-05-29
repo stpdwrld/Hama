@@ -994,7 +994,6 @@ function generateSingboxConfig(links, isFullConfig = false) {
   
   return config;
 }
-
 async function fetchProxyData() {
   const now = Date.now();
   // Cache for 1 hour (3600000 ms)
@@ -1003,24 +1002,50 @@ async function fetchProxyData() {
   }
 
   try {
-    const response = await fetch(PROXY_DATA_URL);
+    const response = await fetch(PROXY_DATA_URL, {
+      headers: {
+        'User-Agent': 'Cloudflare-Worker'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const text = await response.text();
+    console.log('Raw proxy data:', text.substring(0, 100)); // Log first 100 chars
+    
     const lines = text.trim().split('\n');
     const data = lines.map(line => {
-      const [ip, port, countryCode, isp] = line.split(',');
+      const parts = line.split(',');
+      // Ensure we have at least IP and port
+      if (parts.length < 2) {
+        console.warn('Invalid proxy line:', line);
+        return null;
+      }
       return {
-        ip,
-        port,
-        countryCode: countryCode.trim(),
-        isp: isp.trim()
+        ip: parts[0].trim(),
+        port: parts[1].trim(),
+        countryCode: parts[2] ? parts[2].trim() : 'N/A',
+        isp: parts[3] ? parts[3].trim() : 'N/A'
       };
-    });
+    }).filter(item => item !== null);
+    
+    if (data.length === 0) {
+      throw new Error('No valid proxy data found');
+    }
+    
     proxyDataCache = data;
     lastFetchTime = now;
     return data;
   } catch (error) {
     console.error('Error fetching proxy data:', error);
-    return [];
+    // Return cached data if available, even if stale
+    if (proxyDataCache) {
+      console.warn('Using stale proxy data due to fetch error');
+      return proxyDataCache;
+    }
+    throw error; // Re-throw if no cache available
   }
 }
 
@@ -1199,24 +1224,29 @@ async function checkProxy(ip, port) {
 }
 
 // Proxy List Functions
-async function handleProxyListCommand(chatId, threadId) {
-    try {
-        const loadingMsg = await sendMessage(chatId, '⏳ Mengambil daftar country code...', null, threadId);
-        
-        const proxyData = await fetchProxyData();
-        const countryCodes = extractCountryCodes(proxyData);
+async function handleProxyListCommand(chatId, messageId) {
+  try {
+    const loadingMsg = await sendMessage(chatId, '⏳ Mengambil daftar country code...');
+    
+    const proxyData = await fetchProxyData();
+    const countryCodes = [...new Set(proxyData.map(item => item.countryCode))].sort();
 
-        if (countryCodes.size === 0) {
-            await editMessage(chatId, loadingMsg.result.message_id, '❌ Tidak ada proxy yang tersedia.', null, threadId);
-            return;
-        }
-
-        const keyboard = createCountryCodeKeyboard(countryCodes);
-        await editMessage(chatId, loadingMsg.result.message_id, '📋 Pilih Country Code:', keyboard, threadId);
-    } catch (error) {
-        console.error('Error handling /proxylist:', error);
-        await sendMessage(chatId, '❌ Gagal mengambil daftar proxy. Silakan coba lagi nanti.', null, threadId);
+    if (countryCodes.length === 0) {
+      await editMessage(chatId, loadingMsg.result.message_id, 
+        '❌ Tidak ada proxy yang tersedia atau format data tidak valid.');
+      return;
     }
+
+    const keyboard = createCountryCodeKeyboard(countryCodes);
+    await editMessage(chatId, loadingMsg.result.message_id, '📋 Pilih Country Code:', keyboard);
+  } catch (error) {
+    console.error('Error handling /proxylist:', error);
+    await sendMessage(chatId, 
+      `❌ Gagal mengambil daftar proxy. Error: ${error.message}\nSilakan coba lagi nanti atau hubungi admin.`,
+      null,
+      messageId
+    );
+  }
 }
 
 // Helper functions for proxy list
