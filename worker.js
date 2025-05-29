@@ -11,8 +11,7 @@ const UUID = 'f282b878-8711-45a1-8c69-5564172123c1';
 // Multiple main domains
 const MAIN_DOMAINS = [
     'vpn.stupidworld.web.id',
-    'world.stupx2.my.id',
-    'vpn.luckystup-id.xyz'
+    'world.stupx2.my.id'
 ];
 
 // Cache for proxy data
