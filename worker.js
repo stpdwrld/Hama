@@ -994,6 +994,7 @@ function generateSingboxConfig(links, isFullConfig = false) {
   
   return config;
 }
+
 async function fetchProxyData() {
   const now = Date.now();
   // Cache for 1 hour (3600000 ms)
@@ -1002,50 +1003,24 @@ async function fetchProxyData() {
   }
 
   try {
-    const response = await fetch(PROXY_DATA_URL, {
-      headers: {
-        'User-Agent': 'Cloudflare-Worker'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
+    const response = await fetch(PROXY_DATA_URL);
     const text = await response.text();
-    console.log('Raw proxy data:', text.substring(0, 100)); // Log first 100 chars
-    
     const lines = text.trim().split('\n');
     const data = lines.map(line => {
-      const parts = line.split(',');
-      // Ensure we have at least IP and port
-      if (parts.length < 2) {
-        console.warn('Invalid proxy line:', line);
-        return null;
-      }
+      const [ip, port, countryCode, isp] = line.split(',');
       return {
-        ip: parts[0].trim(),
-        port: parts[1].trim(),
-        countryCode: parts[2] ? parts[2].trim() : 'N/A',
-        isp: parts[3] ? parts[3].trim() : 'N/A'
+        ip,
+        port,
+        countryCode: countryCode.trim(),
+        isp: isp.trim()
       };
-    }).filter(item => item !== null);
-    
-    if (data.length === 0) {
-      throw new Error('No valid proxy data found');
-    }
-    
+    });
     proxyDataCache = data;
     lastFetchTime = now;
     return data;
   } catch (error) {
     console.error('Error fetching proxy data:', error);
-    // Return cached data if available, even if stale
-    if (proxyDataCache) {
-      console.warn('Using stale proxy data due to fetch error');
-      return proxyDataCache;
-    }
-    throw error; // Re-throw if no cache available
+    return [];
   }
 }
 
